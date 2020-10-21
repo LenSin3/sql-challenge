@@ -1,64 +1,91 @@
--- SCHEMA FOR DATABASE employees_db
+-- Check if tables were loaded correctly and without errors
+SELECT * FROM departments LIMIT 1;
+SELECT * FROM titles LIMIT 1;
+SELECT * FROM salaries LIMIT 1;
+SELECT * FROM dept_manager LIMIT 1;
+SELECT * FROM dept_emp LIMIT 1;
+SELECT * FROM employees LIMIT 1;
 
--- Drop tables if they exist
-DROP TABLE departments;
-DROP TABLE titles;
-DROP TABLE salaries;
-DROP TABLE dept_manager;
-DROP TABLE dept_emp;
-DROP TABLE employees;
+-- Query employee number, last name, first name, sex, and salary
+SELECT e.emp_no AS employee_number, 
+	e.last_name, 
+	e.first_name, 
+	e.sex, 
+	s.salary
+FROM employees e
+JOIN salaries s
+ON s.emp_no = e.emp_no;
 
--- TABLE 1: departments
--- Create departments table
-CREATE TABLE departments (
-	dept_no VARCHAR(30) PRIMARY KEY,
-	dept_name VARCHAR(30) NOT NULL
-);
+-- Query first name, last name, and hire date for employees who were hired in 1986
+SELECT first_name,
+		last_name,
+		hire_date
+FROM employees
+WHERE date_part('year', hire_date) = 1986;
 
-	
--- TABLE 2: titles
--- Create table titles
-CREATE TABLE titles (
-	title_id VARCHAR(30) PRIMARY KEY,
-	titles VARCHAR(30) NOT NULL
-);
+-- Query manager of each department with the following information: 
+-- department number, department name, the manager's employee number, last name, first name
+SELECT dm.dept_no AS department_number,
+	d.dept_name AS department,
+	dm.emp_no AS manager_employee_number,
+	e.last_name,
+	e.first_name
+FROM dept_manager dm
+JOIN departments d
+ON d.dept_no = dm.dept_no
+INNER JOIN employees e
+ON e.emp_no = dm.emp_no;
 
--- TABLE 3: salaries
--- Create table salaries
-CREATE TABLE salaries (
-	emp_no INT PRIMARY KEY,
-	salary INT NOT NULL
-);
+-- Query department of each employee with the following information: 
+-- employee number, last name, first name, and department name
+SELECT e.emp_no AS employee_number,
+	e.last_name,
+	e.first_name,
+	d.dept_name AS department_name
+FROM employees e
+INNER JOIN dept_emp de
+ON de.emp_no = e.emp_no
+INNER JOIN departments d
+ON d.dept_no = de.dept_no;
 
+-- Query first name, last name, and sex for employees whose first name is "Hercules" and 
+-- last names begin with "B"
+SELECT last_name, 
+	first_name, 
+	sex
+FROM employees
+WHERE first_name = 'Hercules'
+AND last_name LIKE 'B%';
 
--- TABLE 4: dept_manager
--- Create table dept_manager
-CREATE TABLE dept_manager (
-	dept_no VARCHAR(30),
-	emp_no INT,
-	FOREIGN KEY(dept_no) REFERENCES departments(dept_no),
-	FOREIGN KEY(emp_no) REFERENCES salaries(emp_no)
-);
+-- Query all employees in the Sales department, 
+-- including their employee number, last name, first name, and department name
+CREATE VIEW employee_queries AS
+SELECT e.emp_no AS employee_number,
+	e.last_name,
+	e.first_name,
+	d.dept_name AS department_name
+FROM employees e
+INNER JOIN dept_emp de
+ON de.emp_no = e.emp_no
+INNER JOIN departments d
+ON d.dept_no = de.dept_no;
 
--- TABLE 5: dept_emp
--- Create table dept_emp
-CREATE TABLE dept_emp (
-	emp_no INT,
-	dept_no VARCHAR(30),
-	FOREIGN KEY(emp_no) REFERENCES salaries(emp_no),
-	FOREIGN KEY(dept_no) REFERENCES departments(dept_no)
-);
+SELECT *
+FROM employee_queries
+WHERE department_name = 'Sales';
 
--- TABLE 6: employees
--- Create table employees
-CREATE TABLE employees (
-	emp_no INT,
-	emp_title VARCHAR(30),
-	birth_date DATE NOT NULL,
-	first_name VARCHAR(30) NOT NULL,
-	last_name VARCHAR (30) NOT NULL,
-	sex VARCHAR (30) NOT NULL,
-	hire_date DATE NOT NULL,
-	FOREIGN KEY(emp_no) REFERENCES salaries(emp_no),
-	FOREIGN KEY(emp_title) REFERENCES titles(title_id)
-);
+-- Query all employees in the Sales and Development departments,
+-- including their employee number, last name, first name, and department name
+SELECT *
+FROM employee_queries
+WHERE department_name IN ('Sales', 'Development');
+
+-- Query the frequency count of employee last names,
+-- i.e., how many employees share each last name in descending order
+SELECT last_name, 
+	   COUNT(last_name) AS frequency_count
+FROM employee_queries
+GROUP BY 1
+ORDER BY 2 DESC;
+
+-- DROP VIEW employee_queries;
